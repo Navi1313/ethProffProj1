@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract productSellProfit {
+
+struct Product{
+    address payable seller ; 
+    string name  ; 
+    uint price  ; 
+    uint quantity;
+}
+
+// productid -> product description (struct)
+mapping (uint => Product) public products ; 
+uint productcount ;
+
+// productid -> buyerAddress -> totalno of quantites orderd by buyer 
+mapping (uint => mapping(address => uint)) public orderedQuantiesByBuyer;
+
+
+// function adding an an product into the website or page 
+function sellerAddProduct(string memory  _prodname, uint _price , uint _quantity) public  {
+
+    require( bytes(_prodname).length >0 , "enter the name of product");
+    require (_price > 0 , "Enter a price ");
+    require(_quantity > 0 , "enter quantity to product ");
+
+    products[productcount] = Product({
+        seller : payable (msg.sender),
+        name : _prodname,
+        price : _price,
+        quantity : _quantity
+    });
+    productcount++ ;
+}
+function giveYourOrder (uint _prodId , uint _quantity) public payable  {
+    Product storage prod = products[_prodId];
+    require(prod.seller != address(0) , "He is not a valid seller");
+
+     if(_quantity < 0 ){
+        revert (" add a valid no of products");
+    }
+
+    require(prod.quantity >= _quantity, " all items of ${_prodid} are sold out" );
+
+    prod.quantity -= _quantity ; 
+
+    orderedQuantiesByBuyer[_prodId][msg.sender] += _quantity ; 
+
+    // assert() statement to ensure the product quantity remains non-negative
+    assert(prod.quantity >=0);
+
+    prod.seller.transfer(msg.value);
+    
+  }
+  
+}
